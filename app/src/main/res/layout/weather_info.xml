@@ -157,8 +157,8 @@
                     <!--PM2.5图片-->
                     <ImageView
                         android:id="@+id/pm2_5_img"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="48dip"
+                        android:layout_height="59dip"
                         android:layout_marginLeft="5.0dip"
                         android:src="@drawable/biz_plugin_weather_0_50"/>
                 </LinearLayout>
@@ -182,13 +182,13 @@
                 android:layout_alignParentLeft="true"
                 android:layout_below="@id/humidity"
                 android:layout_centerInParent="true"
-                android:layout_marginTop="5.0dip">
+                android:layout_marginTop="10.0dip">
 
                 <!--天气情况图片示例-->
                 <ImageView
                     android:id="@+id/weather_img"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="120dip"
+                    android:layout_height="120dip"
                     android:layout_alignParentLeft="true"
                     android:src="@drawable/biz_plugin_weather_qing"/>
                 <!--今日星期-->
@@ -249,7 +249,7 @@
                     android:singleLine="true"
                     android:text="当前温度"
                     android:textColor="@android:color/white"
-                    android:textSize="30sp"/>
+                    android:textSize="25sp"/>
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
