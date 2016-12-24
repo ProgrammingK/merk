@@ -1,9 +1,13 @@
 package location;
 
+import android.app.Application;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
+
+import static android.content.Context.MODE_PRIVATE;
 
 
 /**
@@ -64,7 +68,9 @@ public class MyLocationListener implements BDLocationListener {
         Log.e( "MainActivity", "" + location.getCity());
         sb.append( location.getProvince() );
         sb.append( location.getCity() );
+
         sb.append( location.getDistrict() );
+
         Log.i( "BaiduLocationApiDem", sb.toString() );
     }
 }

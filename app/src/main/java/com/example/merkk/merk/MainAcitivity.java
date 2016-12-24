@@ -1,10 +1,14 @@
 package com.example.merkk.merk;
 
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.drawable.AnimationDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -17,7 +21,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -31,8 +37,10 @@ import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
+import app.MyApplication;
 import bean.TodayWeather;
 import location.MyLocationListener;
 import util.NetUtil;
@@ -42,11 +50,18 @@ import util.NetUtil;
  */
 public class MainAcitivity extends Activity  implements View.OnClickListener,ViewPager.OnPageChangeListener{
 
+    public LocationClient mLocationClient;
+    public BDLocationListener myListener = new MyLocationListener();
+    public LocationClientOption option = new LocationClientOption();
+
     private static final int UPDATE_TODAY_WEATHER = 1,UPDATE_TODAY_FAIL = 2,SIX_DAY_WEATHER = 3;
+    private static final int SDK_PERMISSION_REQUEST = 100;
     private ImageView mUpdateBtn, mCitySelect, mCityLocation;
     private TextView cityTv, timeTv, humidityTv, weekTv, pmDataTv, pmQyalityTv,
                         temperatureTv, climateTv, windTv, city_name_Tv;
     private ImageView weatherImg, pmImg;
+
+    private MyApplication myApplication = (MyApplication.getInstance());
 
     private AnimationDrawable _animationDrawable;
 
@@ -80,13 +95,74 @@ public class MainAcitivity extends Activity  implements View.OnClickListener,Vie
             }
         }
     };
+    private String permissionInfo;
 
+
+    @TargetApi(23)
+    private void getPersimmions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            ArrayList<String> permissions = new ArrayList<String>();
+            /***
+             * 定位权限为必须权限，用户如果禁止，则每次进入都会申请
+             */
+            // 定位精确位置
+            if(checkSelfPermission( Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+                permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            }
+            if(checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+                permissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+            }
+			/*
+			 * 读写权限和电话状态权限非必要权限(建议授予)只会申请一次，用户同意或者禁止，只会弹一次
+			 */
+            // 读写权限
+
+            if (addPermission(permissions, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                permissionInfo += "Manifest.permission.WRITE_EXTERNAL_STORAGE Deny \n";
+            }
+            // 读取电话状态权限
+            if (addPermission(permissions, Manifest.permission.READ_PHONE_STATE)) {
+                permissionInfo += "Manifest.permission.READ_PHONE_STATE Deny \n";
+            }
+
+            if (permissions.size() > 0) {
+                requestPermissions(permissions.toArray(new String[permissions.size()]), SDK_PERMISSION_REQUEST);
+            }
+        }
+    }
+
+    @TargetApi(23)
+    private boolean addPermission(ArrayList<String> permissionsList, String permission) {
+        if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) { // 如果应用没有获得对应权限,则添加到列表中,准备批量申请
+            if (shouldShowRequestPermissionRationale(permission)){
+                return true;
+            }else{
+                permissionsList.add(permission);
+                return false;
+            }
+
+        }else{
+            return true;
+        }
+    }
+
+    @TargetApi(23)
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        // TODO Auto-generated method stub
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+    }
 
 
     @Override
     protected void onCreate(Bundle saveInstanceState) {
         super.onCreate( saveInstanceState );
         setContentView( R.layout.weather_info );
+
+        mLocationClient = new LocationClient( getApplicationContext() );
+        mLocationClient.registerLocationListener( myListener );
+        initLocation();
 
         mUpdateBtn = (ImageView) findViewById( R.id.title_update_btn );
         mUpdateBtn.setOnClickListener( this );
@@ -99,6 +175,25 @@ public class MainAcitivity extends Activity  implements View.OnClickListener,Vie
             Toast.makeText( MainAcitivity.this, "网络挂了！",Toast.LENGTH_LONG ).show();
         }
         initView();
+    }
+
+    private void initLocation() {
+
+        option.setLocationMode( LocationClientOption.LocationMode.Hight_Accuracy );//可选，默认高精度，设置定位模式，高精度，低功耗，仅设备
+        option.setCoorType("bd09ll");//可选，默认gcj02，设置返回的定位结果坐标系
+        int span=1000;
+        option.setScanSpan(span);//可选，默认0，即仅定位一次，设置发起定位请求的间隔需要大于等于1000ms才是有效的
+        option.setIsNeedAddress(true);//可选，设置是否需要地址信息，默认不需要
+        option.setAddrType( "all" );
+        option.setOpenGps(true);//可选，默认false,设置是否使用gps
+        option.setLocationNotify(true);//可选，默认false，设置是否当GPS有效时按照1S/1次频率输出GPS结果
+        option.setIsNeedLocationDescribe(true);//可选，默认false，设置是否需要位置语义化结果，可以在BDLocation.getLocationDescribe里得到，结果类似于“在北京天安门附近”
+        //option.setIsNeedLocationPoiList(true);//可选，默认false，设置是否需要POI结果，可以在BDLocation.getPoiList里得到
+        option.setIgnoreKillProcess(false);//可选，默认true，定位SDK内部是一个SERVICE，并放到了独立进程，设置是否在stop的时候杀死这个进程，默认不杀死
+        option.SetIgnoreCacheException(false);//可选，默认false，设置是否收集CRASH信息，默认收集
+        //option.setEnableSimulateGps(true);//可选，默认false，设置是否需要过滤GPS仿真结果，默认需要
+        mLocationClient.setLocOption(option);
+        Log.d("baidu location","localClient setted");
     }
 
     void initView(){
@@ -183,10 +278,26 @@ public class MainAcitivity extends Activity  implements View.OnClickListener,Vie
             startActivityForResult( i,1 );
         }
         if(view.getId() == R.id.title_location){
-            LocationClient lc = new LocationClient( getApplicationContext() );
-            lc.registerLocationListener( new MyLocationListener() );
-            lc.start();
-            Log.d( "MainActivity","num = ++++++++" + lc );
+            new Thread( new Runnable() {
+                @Override
+                public void run() {
+                    getPersimmions();
+                    mLocationClient.requestLocation();
+                    String cityname = mLocationClient.getLastKnownLocation().getCity();
+                    String citycode =null;
+                    List<HashMap<String,String>> data =myApplication.getCityData();
+                    for(HashMap<String,String> item : data){
+                        if(item.get( "cityname" ).equals( cityname ))
+                            citycode = item.get( "citycode" );
+                    }
+                    if(!citycode.equals( null )){
+                        queryWeatherCode( citycode );
+                    }else{
+                        Toast.makeText( MainAcitivity.this, "location failed", Toast.LENGTH_SHORT ).show();
+                    }
+                    Log.d( "MainActivity","num = ++++++++" + mLocationClient );
+                }
+            } );
 
             //lc.stop();
         }
@@ -566,5 +677,9 @@ public class MainAcitivity extends Activity  implements View.OnClickListener,Vie
     @Override
     public void onPageScrollStateChanged(int state) {
 
+    }
+
+    public LocationClient getLocationClient(){
+        return mLocationClient;
     }
 }

@@ -65,7 +65,7 @@ public class SelectCity extends Activity implements  View.OnClickListener{
                 }
                 Log.d("input+++++", text);
                 for(HashMap<String,String> map : data){
-                    if(map.get( "citycode" ).startsWith( s.toString() )){
+                    if(map.get( "cityname" ).startsWith( s.toString() )){
                         refreshData.add( map );
                     }
                 }

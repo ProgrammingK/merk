@@ -2,6 +2,7 @@ package com.example.merkk.merk;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -28,7 +29,16 @@ public class Welcome extends Activity implements View.OnClickListener,ViewPager.
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate( savedInstanceState );
         setContentView( R.layout.activity_welcome );
-
+        SharedPreferences sharedPreferences = getSharedPreferences( "config", MODE_PRIVATE );
+        Boolean firstOpen = sharedPreferences.getBoolean( "firstOpen",false );
+        if(firstOpen){
+            Intent i = new Intent( Welcome.this, MainAcitivity.class );
+            startActivity( i );
+            finish();
+        }
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean( "firstOpen",true );
+        editor.commit();
         initViews();
         btn = (Button) views.get( pics.length -1).findViewById( R.id.start );
         btn.setOnClickListener( new View.OnClickListener() {
